@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sao Mai · Nhập liệu sản xuất → XNT & Lương</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4f7fa; --grid:#e2e8ef; --grid-strong:#d3dbe5;
+    --ink:#16263a; --muted:#5d6b7c; --soft:#8a97a8; --line:#dbe2ea;
+  }
+  :root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);background:#f4f7fa}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid-strong) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid-strong) 1px,transparent 1px),
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+    font-family:'Be Vietnam Pro','Segoe UI',system-ui,sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{padding:20px 24px 32px}
+  header{grid-column:1;grid-row:1;width:0;min-width:100%;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+  h1{margin:0 0 4px;white-space:nowrap;font-size:clamp(20px,1.7vw,26px);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+  .lead{margin:0;color:var(--muted);font-size:clamp(13px,1vw,15px);line-height:1.55;max-width:62ch}
+  .counts{display:flex;gap:22px;font-size:13px;color:var(--muted);flex:none;white-space:nowrap}
+  header > div:first-child{min-width:0}
+  .counts b{display:block;font-size:22px;font-weight:800;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+
+  .board{
+    background:rgba(255,255,255,.82);
+    border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 1px 0 #fff inset,0 18px 40px -24px rgba(22,38,58,.35);
+    padding:10px 10px 4px;overflow-x:auto;
+  }
+  .board{grid-column:1;grid-row:2}
+  svg#flow{
+    display:block;font-family:inherit;width:auto;aspect-ratio:var(--aspect, 1.38);
+    height:min(calc(100vh - 150px), calc((100vw - 90px) * var(--ratio, .725)));
+    min-height:520px;
+  }
+  /* Sơ đồ + ghi chú gom thành một khối, căn giữa màn hình */
+  .layout{display:grid;grid-template-columns:auto;grid-template-rows:auto auto auto;gap:14px 16px;justify-content:center;align-items:start}
+
+  .side{grid-column:1;grid-row:3;display:grid;grid-template-columns:1.2fr 1.4fr 1fr;gap:14px;width:0;min-width:100%}
+  .legend,.info{background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+  .legend h2,.info h2{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--ink)}
+  .legend ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:9px;font-size:13px;color:#334155}
+  .legend li{display:flex;align-items:center;gap:10px}
+  .sw{flex:none;width:30px;height:16px;border-radius:5px;border:1.5px solid}
+  .sw.svc{background:#fff;border-color:#cbd5e1;box-shadow:inset 0 3px 0 #0284c7}
+  .sw.manual{background:#fff1f2;border:1.5px dashed #e11d48}
+  .sw.new{background:#e0f2fe;border-color:#0284c7;border-radius:9px}
+  .sw.past{background:#f1f5f9;border:1.5px dashed #94a3b8;border-radius:9px}
+  .sw.table{background:#fff;border-color:#4f46e5}
+  .sw.link{background:#fff;border-color:#cbd5e1;position:relative}
+  .sw.link::after{content:"↗";position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#64748b;line-height:1}
+  .sw.report{background:linear-gradient(135deg,#123047,#0f5a4c);border-color:#0f5a4c}
+  .info{border-left:5px solid var(--accent,#94a3b8);transition:border-color .25s}
+  .info p{margin:0;font-size:14px;line-height:1.55;color:#334155;min-height:66px}
+  .info .hint{color:var(--soft)}
+
+  /* SVG */
+  .tier-num{font-size:22px;font-weight:800;fill:#c3cdd9}
+  .tier-title{font-size:13.5px;font-weight:700;fill:var(--ink)}
+  .tier-sub{font-size:11.5px;fill:var(--soft)}
+  .lane-title{font-size:13.5px;font-weight:700}
+  .lane-sub{font-size:11.5px;fill:var(--soft)}
+  .n-kicker{font-size:11px;font-weight:600;fill:var(--soft)}
+  .n-title{font-size:14px;font-weight:700;fill:var(--ink)}
+  .n-id{font-size:11px;font-weight:600;fill:#475569;font-variant-numeric:tabular-nums}
+  .n-pill{font-size:12px;font-weight:600}
+  .n-code{font-size:10.5px;fill:var(--muted)}
+  .node{cursor:default;outline:none}
+  .node.linked{cursor:pointer}
+  .node .shape{transition:filter .2s, stroke-width .2s}
+  .node:hover .shape,.node:focus-visible .shape{filter:drop-shadow(0 6px 12px rgba(22,38,58,.18));stroke-width:2.2}
+  .node:focus-visible .shape{stroke:#0f172a}
+  [data-lane]{transition:opacity .3s}
+  .dim{opacity:.16}
+  .flow{stroke-dasharray:6 10;animation:dash 1s linear infinite;opacity:0;transition:opacity .25s}
+  .live .flow{opacity:1}
+  @keyframes dash{to{stroke-dashoffset:-16}}
+  @media (prefers-reduced-motion:reduce){.flow{animation:none}}
+
+  @media (max-width:1100px){
+    .layout{grid-template-columns:minmax(0,1fr);justify-content:stretch}
+    header{width:auto;flex-wrap:wrap}
+    .side{grid-column:1;grid-row:3;position:static;display:grid;grid-template-columns:1fr 1fr}
+    svg#flow{width:100%;min-width:900px;height:auto;min-height:0}
+  }
+  @media (max-width:760px){
+    .side{grid-template-columns:1fr}
+    h1{font-size:24px}
+  }
+  .sw.grp{background:#fff;border-color:#4f46e5;box-shadow:inset 0 5px 0 rgba(79,70,229,.25)}
+  .frame ol{margin:0;padding-left:18px;font-size:12.5px;color:#334155;line-height:1.5}
+  .frame ol li{display:list-item;margin-bottom:3px}
+  .frame .note{margin:8px 0 0;font-size:11.5px;color:#64748b;line-height:1.45}
+  .sw.out{background:#fff;border-color:#d4a106;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="layout">
+    <header>
+      <div>
+        <h1 id="page-title"></h1>
+        <p class="lead" id="page-lead"></p>
+      </div>
+      <div class="counts" id="counts"></div>
+    </header>
+    <div class="board">
+      <svg id="flow" role="img"></svg>
+    </div>
+    <aside class="side">
+      <section class="info" id="info">
+        <h2 id="info-title">Chi tiết</h2>
+        <p id="info-text" class="hint">Di chuột hoặc chạm vào một khối trên sơ đồ.</p>
+      </section>
+      <section class="legend frame">
+        <h2>Khung chung của mọi phiếu</h2>
+        <ol>
+          <li><b>Header</b>: ngày · ca · công đoạn · máy · tổ trưởng</li>
+          <li><b>Đầu vào</b>: mã vật tư · số cuộn/lô · SL · ĐVT</li>
+          <li><b>Đầu ra</b>: mã BTP/TP · số cuộn/lô · mét · kg · cái</li>
+          <li><b>Phế</b>: loại · công đoạn gây lỗi · cái · kg</li>
+          <li><b>Nhân sự</b>: người · mặt hàng · sản lượng · tỷ lệ chia</li>
+        </ol>
+        <p class="note">Mỗi mẫu chỉ hiện các cột của sheet gốc, nhưng dùng chung mã trường để gộp dữ liệu về một chỗ.</p>
+      </section>
+      <section class="legend">
+        <h2>Chú thích</h2>
+        <ul id="legend"></ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- =====================================================================
+     CONFIG – PHẦN DUY NHẤT CẦN SỬA KHI VẼ SƠ ĐỒ MỚI
+     Toạ độ x, y là TÂM của node. Trục y đi từ trên xuống.
+     Engine bên dưới không cần sửa.
+     ===================================================================== -->
+<script>
+const CONFIG = {
+  title: 'Sao Mai · Nhập liệu sản xuất → Xuất nhập tồn & Lương sản lượng',
+  lead:  'Giải pháp sơ bộ: 21 sheet mẫu sổ → 12 mẫu phiếu trên Base (6 nhóm gộp N1–N6 + 6 mẫu riêng). Mọi phiếu chọn mã từ danh mục, chỉ phiếu đã duyệt mới đổ về 3 bảng để ra XNT, phế và bảng lương.',
+  counts: [[21,'sheet mẫu sổ'], [12,'mẫu phiếu Base'], [3,'báo cáo đầu ra']],
+  width: 1362, height: 872,
+  serviceBaseUrl: '',
+  lanes: {
+    dm:{color:'#475569'}, n1:{color:'#4f46e5'}, n6:{color:'#0284c7'}, n5:{color:'#0891b2'}, n3:{color:'#ca8a04'},
+    n2:{color:'#ea580c'}, n4:{color:'#c026d3'}, tc:{color:'#0d9488'}, soi:{color:'#059669'}, pe:{color:'#16a34a'},
+    dh:{color:'#b45309'}, lb:{color:'#65a30d'}, dd:{color:'#db2777'},
+    xnt:{color:'#1d4ed8'}, phe:{color:'#dc2626'}, luong:{color:'#7c3aed'}
+  },
+  tiers: [
+    {name:'Danh mục',    sub:'Base Dataset',      y0:12,  y1:112, color:'#475569'},
+    {name:'Mẫu gộp',     sub:'N1–N6',             y0:124, y1:284, color:'#2563eb'},
+    {name:'Mẫu riêng',   sub:'6 sheet',           y0:296, y1:456, color:'#0d9488'},
+    {name:'Kho dữ liệu', sub:'Bảng chuẩn hoá',    y0:468, y1:700, color:'#0f766e'},
+    {name:'Báo cáo',     sub:'Đầu ra',            y0:712, y1:864, color:'#b45309'}
+  ],
+  nodes: {
+    dm_vt:  {type:'table', lane:'dm', x:340, y:62, w:260, h:64, title:'Danh mục vật tư', code:'~1.100 mã NVL · PTTT · BTP · TP',
+             info:['Danh mục vật tư','Import từ file Mã NVL NL PTTT BTP TP. Thêm cột nhóm (NVL/NL/PTTT/BTP/TP), công đoạn sở hữu, ĐVT chính – ĐVT phụ. Mỗi mẫu phiếu chỉ hiện nhóm mã của công đoạn đó. Số lô tách thành trường riêng.']},
+    dm_may: {type:'table', lane:'dm', x:680, y:62, w:260, h:64, title:'Máy & công đoạn', code:'máy dệt, tráng, in, may…',
+             info:['Máy & công đoạn','Danh sách máy theo công đoạn để chọn trên phiếu và gom sản lượng theo máy.']},
+    dm_ns:  {type:'table', lane:'dm', x:1020, y:62, w:260, h:64, title:'Nhân sự & tổ', code:'mã NV, tổ, ca',
+             info:['Nhân sự & tổ','Danh sách công nhân theo tổ. Tổ trưởng chọn người thay vì gõ tên để sản lượng gom đúng người khi tính lương.']},
+    g_n1: {type:'group', lane:'n1', x:105, y:206, w:184, h:132, title:'N1 · Dệt máy', sheets:['DỆT ISO', 'DỆT ISO (2)'], vao:'sợi', ra:'manh dệt (cuộn, m, kg)', info:['N1 · Dệt máy','Sheet gốc: DỆT ISO, DỆT ISO (2). Mỗi dòng = 1 máy dệt/ca: sợi, khổ manh, mặt hàng, số đồng hồ cuối ca, cắt cuộn, số cuộn, khối lượng, phế. Lương thợ dệt theo mét/máy.']},
+    g_n6: {type:'group', lane:'n6', x:315, y:206, w:184, h:132, title:'N6 · Tráng', sheets:['Tráng ISO', 'Tráng OPP X2'], vao:'manh dệt, hạt, giấy', ra:'manh tráng (cuộn)', info:['N6 · Tráng','Sheet gốc: Tráng ISO, Tráng OPP X2. Đầu vào theo từng cuộn manh dệt (số cuộn, chiều dài, kg) + hạt tráng/giấy/OPP. Đầu ra theo cuộn manh tráng. Chế độ máy và kiểm tra CL để tùy chọn.']},
+    g_n5: {type:'group', lane:'n5', x:525, y:206, w:184, h:132, title:'N5 · In cuộn', sheets:['IN CUỘN X2', 'iN CUỘN x3'], vao:'cuộn manh', ra:'bao in (bao), phế kg', info:['N5 · In cuộn','Sheet gốc: IN CUỘN X2, iN CUỘN x3. Đầu vào: mặt hàng, khổ manh, số cuộn, số máy dệt, chiều dài. Đầu ra: số bao, phế (kg).']},
+    g_n3: {type:'group', lane:'n3', x:735, y:206, w:184, h:132, title:'N3 · In, cắt đai', sheets:['IN ĐAI', 'CẮT đai', 'CẮT TÁP'], vao:'giấy, mực (kg)', ra:'đai, nẹp, táp (kg)', info:['N3 · In, cắt đai','Sheet gốc: IN ĐAI, CẮT đai, CẮT TÁP. Ra đai/nẹp/táp (kg) để cấp cho May bao xi măng. Mỗi dòng: người, NL đầu vào, khối lượng, loại nẹp, sản lượng, phế.']},
+    g_n2: {type:'group', lane:'n2', x:945, y:206, w:184, h:132, title:'N2 · Gấp góc, May', sheets:['Gấp góc ISO', 'May bao ISO', 'May bao xm ISO'], vao:'ống ĐH, nẹp', ra:'bao TP theo lô (cái)', info:['N2 · Gấp góc, May','Sheet gốc: Gấp góc ISO, May bao ISO, May bao xm ISO. Sản lượng theo người × mặt hàng × số lô. Phế (cái) ghi theo công đoạn gây lỗi: Định hình, Tráng, Dệt, May. May XM có nhiều người/máy nên cần tỷ lệ chia.']},
+    g_n4: {type:'group', lane:'n4', x:1155, y:206, w:184, h:132, title:'N4 · Van, hông, ICM', sheets:['Máy tạo van x3', 'Máy in, cắt, may x3', 'Máy tạo hông x2'], vao:'cuộn manh', ra:'bao (cái) + KCS', info:['N4 · Van, hông, ICM','Sheet gốc: Máy tạo van x3, Máy in, cắt, may x3, Máy tạo hông x2. Mỗi dòng = 1 cuộn manh: số cuộn, máy dệt, chiều dài, kích thước, phế theo Dệt/Tráng/In/May-cắt, KCS đạt/không đạt, số lượng bao.']},
+    g_tc: {type:'group', lane:'tc', x:210, y:378, w:184, h:132, title:'Tái chế', sheets:['TÁI CHẾ 1'], vao:'phế liệu (kg)', ra:'hạt tái sinh (kg)', info:['Tái chế','Sheet gốc: TÁI CHẾ 1. Vào: phế XM, phế PP, đùn tráng, PE wax, muối kẽm, hạt màu. Ra: hạt tái chế. Khép vòng phế liệu thu hồi → nguyên liệu.']},
+    g_soi: {type:'group', lane:'soi', x:420, y:378, w:184, h:132, title:'Sợi', sheets:['Sợi'], vao:'hạt PP, phụ gia', ra:'sợi BTP (kg)', info:['Sợi','Sheet gốc: Sợi. Vào: PP, phụ gia, hỗn hợp trắng, hạt tẩy, tái chế. Ra: sợi theo loại (2.5 ly, 3.1 ly…). Phế: lần kéo, đứt, lấy sợi, dàn cuốn.']},
+    g_pe: {type:'group', lane:'pe', x:630, y:378, w:184, h:132, title:'Thổi PE', sheets:['THỔI PE'], vao:'hạt PE (kg)', ra:'màng PE (kg, cuộn)', info:['Thổi PE','Sheet gốc: THỔI PE. Vào: LLDPE, LDPE, HDPE, Polycom, tái chế. Ra: số cuộn, sản lượng kg/số bao.']},
+    g_dh: {type:'group', lane:'dh', x:840, y:378, w:184, h:132, title:'Định hình', sheets:['Định Hình ISO'], vao:'manh tráng, giấy', ra:'ống định hình (cái)', info:['Định hình','Sheet gốc: Định Hình ISO. Vào: cuộn manh tráng (số cuộn, chiều dài, kg), giấy ruột, hạt dán, mực in. Ra: sản lượng (cái) theo số đồng hồ. Phế theo ĐH/Tráng/Dệt.']},
+    g_lb: {type:'group', lane:'lb', x:1050, y:378, w:184, h:132, title:'Lồng bao PE', sheets:['LỒNG BAO PE ISO'], vao:'bao, màng PE', ra:'bao lồng (cái), giờ', info:['Lồng bao PE','Sheet gốc: LỒNG BAO PE ISO. Mỗi dòng = 1 người: mặt hàng, số lô, số lượng, phế, thời gian làm.']},
+    g_dd: {type:'group', lane:'dd', x:1260, y:378, w:184, h:132, title:'Dán đáy', sheets:['DÁN ĐÁY'], vao:'cuộn manh', ra:'bao (cái)', info:['Dán đáy','Sheet gốc: DÁN ĐÁY. Vào: số cuộn, máy, chiều dài, kg. Ra: số bao. Phế theo Dệt/Tráng/In/Dán đáy + sự cố máy.']},
+
+    p_kho: {type:'pill', variant:'new', lane:'xnt', x:150, y:530, w:260, h:40, label:'Phiếu kho NVL, TP (luồng kho)',
+            info:['Phiếu kho','Không nằm trong 21 sheet mẫu sổ nhưng cần để ra XNT: nhập mua NVL/NL/PTTT, xuất NVL ra xưởng, xuất thành phẩm giao khách.']},
+    p_ok:  {type:'pill', variant:'new', lane:'all', x:640, y:530, w:340, h:40, label:'Phiếu đã duyệt · header + 4 bảng con',
+            info:['Phiếu đã duyệt','Mỗi phiếu = 1 ca × 1 công đoạn × 1 máy/tổ. Header: ngày, ca, công đoạn, máy, tổ trưởng. Bảng con: Đầu vào, Đầu ra, Phế, Nhân sự. Luồng: Tổ trưởng nhập → Thống kê/QC đối chiếu → Duyệt.']},
+    t_mv:  {type:'table', lane:'xnt', x:300, y:650, w:260, h:64, title:'Sổ cái vật tư', code:'fact_stock_movement',
+            info:['Sổ cái vật tư','Mỗi dòng = một lần nhập/xuất một mã tại một kho hoặc công đoạn. Đầu ra phiếu = nhập kho BTP công đoạn đó; đầu vào = xuất khỏi kho công đoạn trước hoặc kho NVL.']},
+    t_scrap:{type:'table', lane:'phe', x:640, y:650, w:260, h:64, title:'Phế liệu', code:'fact_scrap',
+            info:['Phế liệu','Phế theo loại, công đoạn phát sinh, công đoạn gây lỗi; đơn vị cái và kg. Phế thu hồi đi vào phiếu Tái chế.']},
+    t_ns:  {type:'table', lane:'luong', x:980, y:650, w:260, h:64, title:'Sản lượng nhân công', code:'fact_output_worker',
+            info:['Sản lượng nhân công','Từ bảng con Nhân sự: người, ngày, ca, công đoạn, máy, mặt hàng, sản lượng và tỷ lệ chia khi nhiều người cùng máy.']},
+    t_dg:  {type:'table', lane:'luong', x:1250, y:650, w:210, h:64, title:'Đơn giá lương', code:'công đoạn × mặt hàng',
+            info:['Đơn giá lương','Đơn giá theo công đoạn × mặt hàng (đ/mét, đ/kg, đ/bao…), kèm quy định trừ phế nếu có. Phòng nhân sự duy trì.']},
+    r_xnt: {type:'out', lane:'xnt', x:300, y:810, w:300, h:72, icon:'pbi', title:'Báo cáo Xuất – Nhập – Tồn', sub:'NVL · NL · PTTT · BTP · TP',
+            info:['Báo cáo XNT','Tồn đầu + Nhập − Xuất = Tồn cuối theo mã, kỳ, kho/công đoạn. Thấy được tồn BTP dở dang ở từng công đoạn và truy theo số cuộn, số lô.']},
+    r_phe: {type:'out', lane:'phe', x:640, y:810, w:300, h:72, icon:'pbi', title:'Phế & hao hụt', sub:'theo công đoạn, máy, ca',
+            info:['Phế & hao hụt','Tỷ lệ phế theo công đoạn, máy, ca, người.']},
+    r_luong:{type:'out', lane:'luong', x:1115, y:810, w:300, h:72, icon:'sheet', title:'Bảng lương sản lượng', sub:'từng công nhân, theo kỳ',
+            info:['Bảng lương sản lượng','Lương = Σ (sản lượng × tỷ lệ chia × đơn giá) theo từng công nhân trong kỳ, có thể trừ phế. Xuất Excel cho nhân sự.']}
+  },
+  edges: [
+    {from:'p_kho', to:'t_mv', via:590},
+    {from:'p_ok', to:'t_mv', via:590}, {from:'p_ok', to:'t_scrap', via:590}, {from:'p_ok', to:'t_ns', via:590},
+    {from:'t_mv', to:'r_xnt'}, {from:'t_scrap', to:'r_phe'},
+    {from:'t_ns', to:'r_luong', via:742}, {from:'t_dg', to:'r_luong', via:742}
+  ],
+  buses: [
+    {from:['g_n1','g_n6','g_n5','g_n3','g_n2','g_n4','g_tc','g_soi','g_pe','g_dh','g_lb','g_dd'], to:'p_ok', y:482}
+  ]
+};
+</script>
+
+<!-- ============================ ENGINE (không cần sửa) ============================ -->
+<script>
+(function(){
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('flow');
+  const C = CONFIG, nodes = C.nodes;
+  const LABEL_W = 100;   // dải nhãn tầng bên trái
+
+  function el(tag, attrs, parent, text){
+    const e = document.createElementNS(NS, tag);
+    for (const k in (attrs||{})) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+
+  /* ---------- header, kích thước ---------- */
+  document.title = C.title;
+  document.getElementById('page-title').textContent = C.title;
+  document.getElementById('page-lead').textContent = C.lead || '';
+  const countsBox = document.getElementById('counts');
+  (C.counts||[]).forEach(([n,t])=>{ const d=document.createElement('div'); d.innerHTML='<b></b>'; d.firstChild.textContent=n; d.append(t); countsBox.appendChild(d); });
+  const VW = C.width + LABEL_W, VH = C.height;
+  svg.setAttribute('viewBox', `${-LABEL_W} 0 ${VW} ${VH}`);
+  svg.setAttribute('aria-label', C.title);
+  svg.style.setProperty('--aspect', `${VW}/${VH}`);
+  svg.style.setProperty('--ratio', (VH/VW).toFixed(4));
+
+  /* ---------- màu ---------- */
+  const COLOR = {manual:'#e11d48', past:'#94a3b8', sheet:'#16a34a', bus:'#334155', report:'#0f766e', pbi:'#d4a106', doc:'#2563eb'};
+  Object.entries(C.lanes).forEach(([k,l])=>COLOR[k]=l.color);
+  const laneColor = l => COLOR[l] || COLOR.bus;
+
+  /* ---------- defs ---------- */
+  const defs = el('defs');
+  const g1 = el('linearGradient', {id:'gReport', x1:'0', y1:'0', x2:'1', y2:'1'}, defs);
+  el('stop', {offset:'0', 'stop-color':'#123047'}, g1);
+  el('stop', {offset:'1', 'stop-color':'#0f5a4c'}, g1);
+  const glow = el('filter', {id:'glow', x:'-20%', y:'-30%', width:'140%', height:'170%'}, defs);
+  el('feDropShadow', {dx:'0', dy:'12', stdDeviation:'14', 'flood-color':'#0f5a4c', 'flood-opacity':'.28'}, glow);
+  const soft = el('filter', {id:'soft', x:'-10%', y:'-20%', width:'120%', height:'150%'}, defs);
+  el('feDropShadow', {dx:'0', dy:'3', stdDeviation:'4', 'flood-color':'#16263a', 'flood-opacity':'.08'}, soft);
+  Object.entries(COLOR).forEach(([k,c])=>{
+    const m = el('marker', {id:'arr-'+k, viewBox:'0 0 10 10', refX:'8', refY:'5', markerWidth:'11', markerHeight:'11', orient:'auto', markerUnits:'userSpaceOnUse'}, defs);
+    el('path', {d:'M0,0.5 L10,5 L0,9.5 Z', fill:c}, m);
+  });
+
+  const L = { tiers: el('g'), edges: el('g'), nodes: el('g') };
+
+  /* ---------- tầng ---------- */
+  (C.tiers||[]).forEach((t,i)=>{
+    const h = t.y1 - t.y0, g = el('g', {}, L.tiers), c = t.color;
+    el('rect', {x:-92, y:t.y0, width:C.width+84, height:h, rx:18, fill:c, 'fill-opacity':.035, stroke:c, 'stroke-opacity':.22, 'stroke-width':1.2}, g);
+    el('rect', {x:-92, y:t.y0, width:62, height:h, rx:18, fill:c, 'fill-opacity':.1}, g);
+    el('rect', {x:-40, y:t.y0, width:10, height:h, fill:c, 'fill-opacity':.1}, g);
+    el('line', {x1:-30, x2:-30, y1:t.y0, y2:t.y1, stroke:c, 'stroke-opacity':.25}, g);
+    el('circle', {cx:-61, cy:t.y0+28, r:14, fill:c}, g);
+    el('text', {x:-61, y:t.y0+33, 'text-anchor':'middle', fill:'#fff', style:'font-size:14px;font-weight:800'}, g, String(i+1));
+    const lbl = el('text', {x:-61, y:0, 'text-anchor':'middle'}, g);
+    el('tspan', {x:-61, dy:'-2', fill:c, style:'font-size:14px;font-weight:800'}, lbl, t.name);
+    if (h > 200 && t.sub) el('tspan', {x:-61, dy:'17', fill:'#64748b', style:'font-size:11px;font-weight:500'}, lbl, t.sub);
+    // nhãn dọc: không đè số thứ tự, không tràn khỏi tầng
+    const len = lbl.getBBox().width, startY = t.y0 + 50, endY = t.y1 - 10, room = endY - startY;
+    if (len > room) lbl.firstChild.style.fontSize = (14 * room / len).toFixed(1) + 'px';
+    const cy = Math.max(t.y0 + 28 + (h-28)/2, startY + Math.min(len, room)/2);
+    lbl.setAttribute('y', cy);
+    lbl.setAttribute('transform', `rotate(-90 -61 ${cy})`);
+  });
+
+  /* ---------- chuẩn hoá node ---------- */
+  Object.values(nodes).forEach(n=>{
+    if (n.type==='service' && !n.url && C.serviceBaseUrl) n.url = C.serviceBaseUrl + n.id;
+    if (!n.info) n.info = [n.title || n.label || '', ''];
+    if (n.url) n.info = [n.info[0], (n.info[1] ? n.info[1] + ' ' : '') + 'Bấm vào khối để mở link.'];
+  });
+  const top = n => [n.x, n.y - n.h/2];
+  const bot = n => [n.x, n.y + n.h/2];
+
+  /* ---------- đường nối vuông góc ---------- */
+  function roundedPath(pts, r){
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i=1;i<pts.length-1;i++){
+      const [x0,y0]=pts[i-1], [x1,y1]=pts[i], [x2,y2]=pts[i+1];
+      const d1 = Math.min(r, Math.hypot(x1-x0,y1-y0)/2), d2 = Math.min(r, Math.hypot(x2-x1,y2-y1)/2);
+      d += ` L${x1-Math.sign(x1-x0)*d1},${y1-Math.sign(y1-y0)*d1} Q${x1},${y1} ${x1+Math.sign(x2-x1)*d2},${y1+Math.sign(y2-y1)*d2}`;
+    }
+    const last = pts[pts.length-1];
+    return d + ` L${last[0]},${last[1]}`;
+  }
+  function route(A, B, via){
+    const [x1,y1] = bot(A), [x2,y2t] = top(B), y2 = y2t - 2;
+    if (Math.abs(x1-x2) < 0.5) return [[x1,y1],[x2,y2]];
+    const ym = via != null ? via : (y1+y2)/2;
+    return [[x1,y1],[x1,ym],[x2,ym],[x2,y2]];
+  }
+  function drawEdge(pts, colorKey, lane, opts={}){
+    const c = COLOR[colorKey] || COLOR.bus;
+    const g = el('g', {'data-lane':lane, class:'edge'}, L.edges);
+    const d = roundedPath(pts, 12);
+    const p = el('path', {d, fill:'none', stroke:c, 'stroke-width':opts.width||2.2, 'stroke-linejoin':'round'}, g);
+    if (opts.arrow !== false) p.setAttribute('marker-end', `url(#arr-${COLOR[colorKey]?colorKey:'bus'})`);
+    if (opts.dash) p.setAttribute('stroke-dasharray', opts.dash);
+    el('path', {d, fill:'none', stroke:'#fff', 'stroke-width':opts.width||2.2, 'stroke-opacity':.85, class:'flow'}, g);
+    return g;
+  }
+  (C.edges||[]).forEach(e=>{
+    const A = nodes[e.from], B = nodes[e.to];
+    if (!A || !B){ console.error('Edge lỗi, không tìm thấy node:', e); return; }
+    const key = e.color || (A.variant==='past' ? 'past' : A.variant==='manual' ? 'manual' : (A.lane==='all' ? 'bus' : A.lane));
+    drawEdge(route(A,B,e.via), key, A.lane, A.variant==='past' ? {dash:'6 4'} : {});
+  });
+  (C.buses||[]).forEach(b=>{
+    const T = nodes[b.to], xs = [T.x];
+    b.from.forEach(k=>{
+      const n = nodes[k], [x,y] = bot(n); xs.push(x);
+      const g = drawEdge([[x,y],[x,b.y]], n.lane, n.lane, {arrow:false});
+      el('circle', {cx:x, cy:b.y, r:4.5, fill:laneColor(n.lane), stroke:'#fff', 'stroke-width':1.5}, g);
+    });
+    const g = el('g', {'data-lane':'all'}, L.edges);
+    el('path', {d:`M${Math.min(...xs)},${b.y} L${Math.max(...xs)},${b.y}`, stroke:COLOR.bus, 'stroke-width':2.6, fill:'none', 'stroke-linecap':'round'}, g);
+    const d = `M${T.x},${b.y} L${T.x},${T.y-T.h/2-2}`;
+    el('path', {d, stroke:COLOR.bus, 'stroke-width':2.6, fill:'none', 'marker-end':'url(#arr-bus)'}, g);
+    el('path', {d, stroke:'#fff', 'stroke-width':2.6, 'stroke-opacity':.85, fill:'none', class:'flow'}, g);
+    if (!T.chips) T.chips = b.from.map(k=>[nodes[k].title, nodes[k].lane]);
+  });
+
+  /* ---------- vẽ node ---------- */
+  function nodeGroup(key, n){
+    return el('g', {class:'node', 'data-lane':n.lane, 'data-key':key, tabindex:'0', role:'button', 'aria-label':n.info[0]}, L.nodes);
+  }
+  function linkIcon(g, x, y, c){
+    const ic = el('g', {transform:`translate(${x},${y})`, fill:'none', stroke:c, 'stroke-width':1.6, 'stroke-linecap':'round', 'stroke-linejoin':'round'}, g);
+    el('path', {d:'M9,1 H13 V5'}, ic);
+    el('path', {d:'M13,1 L7,7'}, ic);
+    el('path', {d:'M11,8.5 V12 a1,1 0 0 1 -1,1 H2 a1,1 0 0 1 -1,-1 V4 a1,1 0 0 1 1,-1 H5.5'}, ic);
+  }
+  function sheetIcon(g, ix, iy, w, h, c){
+    el('rect', {x:ix, y:iy, width:w, height:h, rx:3.5, fill:c}, g);
+    const px = ix+w*.2, py = iy+h*.32, pw = w*.6, ph = h*.46;
+    el('rect', {x:px, y:py, width:pw, height:ph, fill:'none', stroke:'#fff', 'stroke-width':1.4}, g);
+    el('line', {x1:px+pw/2, x2:px+pw/2, y1:py, y2:py+ph, stroke:'#fff', 'stroke-width':1.4}, g);
+    el('line', {x1:px, x2:px+pw, y1:py+ph/2, y2:py+ph/2, stroke:'#fff', 'stroke-width':1.4}, g);
+  }
+  const drawers = {
+    group(key, n){
+      const c = laneColor(n.lane), x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:14, fill:'#fff', stroke:c, 'stroke-width':1.6, filter:'url(#soft)'}, g);
+      el('path', {d:`M${x},${y+28} V${y+14} a14,14 0 0 1 14,-14 H${x+n.w-14} a14,14 0 0 1 14,14 V${y+28} Z`, fill:c, 'fill-opacity':.13}, g);
+      el('text', {x:x+12, y:y+19, style:`font-size:12.5px;font-weight:800;fill:${c}`}, g, n.title);
+      let cy = y + 45;
+      (n.sheets||[]).forEach(sh=>{
+        el('rect', {x:x+12, y:cy-9, width:8, height:10, rx:1.5, fill:'none', stroke:'#94a3b8', 'stroke-width':1.2}, g);
+        el('text', {x:x+25, y:cy, style:'font-size:11px;font-weight:600;fill:#334155'}, g, sh);
+        cy += 15;
+      });
+      const by = y + n.h - 34;
+      el('line', {x1:x+12, x2:x+n.w-12, y1:by-12, y2:by-12, stroke:'#e2e8f0'}, g);
+      [['Vào',n.vao,by],['Ra',n.ra,by+16]].forEach(([k,v,yy])=>{
+        el('text', {x:x+12, y:yy, style:`font-size:10.5px;font-weight:700;fill:${c}`}, g, k);
+        el('text', {x:x+36, y:yy, style:'font-size:10.5px;fill:#475569'}, g, v);
+      });
+    },
+    service(key, n){
+      const c = laneColor(n.lane), x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:14, fill:'#fff', stroke:'#cdd6e1', 'stroke-width':1.4, filter:'url(#soft)'}, g);
+      el('rect', {x:x+18, y:y-1.5, width:n.w-36, height:4, rx:2, fill:c}, g);
+      el('text', {x:n.x, y:y+25, 'text-anchor':'middle', class:'n-kicker'}, g, n.kicker || 'Phần mềm Service');
+      el('text', {x:n.x, y:y+46, 'text-anchor':'middle', class:'n-title'}, g, n.title);
+      if (n.id){
+        const label = 'ID ' + n.id, cw = 22 + label.length*6.4;
+        el('rect', {x:n.x-cw/2, y:y+55, width:cw, height:19, rx:6, fill:c, 'fill-opacity':.1}, g);
+        el('text', {x:n.x, y:y+68.5, 'text-anchor':'middle', class:'n-id', style:'fill:'+c}, g, label);
+      }
+      if (n.url) linkIcon(g, x+n.w-24, y+10, '#94a3b8');
+    },
+    pill(key, n){
+      const x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      let c = laneColor(n.lane), dash = null, txt = c;
+      if (n.variant==='past'){ c = COLOR.past; dash='4 3'; txt='#475569'; }
+      if (n.variant==='manual'){ c = COLOR.manual; dash='4 3'; txt=c; }
+      el('rect', {x, y, width:n.w, height:n.h, rx:n.h/2, fill:'#fff'}, g);
+      const r = el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:n.h/2, fill:c, 'fill-opacity':.1, stroke:c, 'stroke-width':1.5}, g);
+      if (dash) r.setAttribute('stroke-dasharray', dash);
+      el('text', {x:n.x, y:n.y+4.5, 'text-anchor':'middle', class:'n-pill', fill:txt}, g, n.label);
+    },
+    sheet(key, n){
+      const c = COLOR.sheet, x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:12, fill:'#fff', stroke:c, 'stroke-width':1.5, filter:'url(#soft)'}, g);
+      sheetIcon(g, x+18, n.y-12, 20, 24, c);
+      el('text', {x:x+50, y:n.y-2, class:'n-title', style:'font-size:13.5px'}, g, n.title);
+      el('text', {x:x+50, y:n.y+14, class:'n-code', style:'font-size:11px'}, g, n.sub || '');
+      if (n.url) linkIcon(g, x+n.w-24, y+8, '#94a3b8');
+    },
+    table(key, n){
+      const c = laneColor(n.lane), x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:12, fill:'#fff', stroke:c, 'stroke-width':1.7, filter:'url(#soft)'}, g);
+      const cx = x+27, cy = n.y-10;
+      el('path', {d:`M${cx-10},${cy} v18 a10,4 0 0 0 20,0 v-18`, fill:c, 'fill-opacity':.14, stroke:c, 'stroke-width':1.5}, g);
+      el('path', {d:`M${cx-10},${cy+9} a10,4 0 0 0 20,0`, fill:'none', stroke:c, 'stroke-width':1.5}, g);
+      el('ellipse', {cx, cy, rx:10, ry:4, fill:'#fff', stroke:c, 'stroke-width':1.5}, g);
+      el('text', {x:x+46, y:n.y-3, class:'n-title'}, g, n.title);
+      el('text', {x:x+46, y:n.y+14, class:'n-code'}, g, n.code || '');
+      if (n.url) linkIcon(g, x+n.w-24, y+8, '#94a3b8');
+    },
+    report(key, n){
+      const x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:22, fill:'url(#gReport)', stroke:'#0f5a4c', 'stroke-width':1, filter:'url(#glow)'}, g);
+      el('circle', {cx:x+n.w-40, cy:y+30, r:70, fill:'none', stroke:'#fff', 'stroke-opacity':.06, 'stroke-width':18}, g);
+      const t = el('text', {x:n.x+14, y:y+52, 'text-anchor':'middle', fill:'#fff', style:'font-size:27px;font-weight:800;letter-spacing:-.01em'}, g, n.title || 'Báo cáo');
+      const tw = t.getBBox().width, ix = n.x+14 - tw/2 - 38, iy = y+30;
+      [[0,14],[9,8],[18,0]].forEach(([dx,dy],i)=>el('rect', {x:ix+dx, y:iy+dy, width:6, height:24-dy, rx:1.5, fill:'#6ee7b7', 'fill-opacity':.65+i*.15}, g));
+      el('text', {x:n.x, y:y+80, 'text-anchor':'middle', fill:'#cfe7e1', style:'font-size:13.5px'}, g, n.sub || '');
+      const chips = n.chips || [];
+      const widths = chips.map(([t])=>t.length*6.8+32), gap = 10;
+      let cx = n.x - (widths.reduce((a,b)=>a+b,0) + gap*Math.max(chips.length-1,0))/2;
+      chips.forEach(([t,l],i)=>{
+        const w = widths[i];
+        el('rect', {x:cx, y:y+100, width:w, height:26, rx:13, fill:'#fff', 'fill-opacity':.1, stroke:'#fff', 'stroke-opacity':.18}, g);
+        el('circle', {cx:cx+13, cy:y+113, r:4, fill:laneColor(l)}, g);
+        el('text', {x:cx+22, y:y+117, fill:'#e6f4f1', style:'font-size:11.5px;font-weight:600'}, g, t);
+        cx += w + gap;
+      });
+      if (n.url) linkIcon(g, x+n.w-30, y+14, '#cfe7e1');
+    },
+    out(key, n){
+      const x = n.x-n.w/2, y = n.y-n.h/2, g = nodeGroup(key,n);
+      const c = COLOR[n.icon] || COLOR.doc;
+      el('rect', {class:'shape', x, y, width:n.w, height:n.h, rx:14, fill:'#fff', stroke:c, 'stroke-width':1.7, filter:'url(#soft)'}, g);
+      const ix = x+20, iy = n.y-16;
+      if (n.icon==='sheet') sheetIcon(g, ix, iy, 26, 32, c);
+      else if (n.icon==='pbi'){
+        el('rect', {x:ix, y:iy, width:30, height:32, rx:6, fill:'#fdf6dc'}, g);
+        [[5,16,'#e8b70a'],[12,10,'#d4a106'],[19,4,'#b88a00']].forEach(([dx,dy,f])=>el('rect', {x:ix+dx, y:iy+dy, width:6, height:28-dy, rx:1.5, fill:f}, g));
+      } else {
+        el('path', {d:`M${ix},${iy+3} a3,3 0 0 1 3,-3 h14 l9,9 v20 a3,3 0 0 1 -3,3 h-20 a3,3 0 0 1 -3,-3 Z`, fill:c, 'fill-opacity':.14, stroke:c, 'stroke-width':1.5}, g);
+        [12,18,24].forEach(dy=>el('line', {x1:ix+6, x2:ix+20, y1:iy+dy, y2:iy+dy, stroke:c, 'stroke-width':1.5}, g));
+      }
+      el('text', {x:ix+44, y:n.y-2, class:'n-title', style:'font-size:15px'}, g, n.title);
+      el('text', {x:ix+44, y:n.y+16, class:'n-code', style:'font-size:11.5px'}, g, (n.sub||'') + (n.url ? ' – bấm để mở' : ''));
+      if (n.url) linkIcon(g, x+n.w-30, y+12, '#64748b');
+    }
+  };
+  Object.entries(nodes).forEach(([k,n])=>{
+    if (!drawers[n.type]) return console.error('Loại node không hỗ trợ:', k, n.type);
+    drawers[n.type](k,n);
+  });
+
+  /* ---------- chú thích: tự sinh theo loại node có mặt ---------- */
+  const types = new Set(Object.values(nodes).map(n=>n.type==='pill' ? 'pill-'+n.variant : n.type));
+  const anyLink = Object.values(nodes).some(n=>n.url);
+  const LEG = [
+    ['group','grp','Mẫu phiếu Base (N = nhóm sheet gộp)'], ['service','svc','Quy trình trên phần mềm'], ['pill-manual','manual','Dữ liệu nhập thủ công'],
+    ['pill-new','new','Dữ liệu mới, cập nhật định kỳ'], ['pill-past','past','Dữ liệu quá khứ (Excel cũ)'],
+    ['table','table','Bảng dữ liệu đích'], ['report','report','Báo cáo tổng hợp'], ['out','out','Báo cáo đầu ra']
+  ];
+  const ul = document.getElementById('legend');
+  LEG.filter(([t])=>types.has(t)).concat(anyLink ? [[null,'link','Bấm để mở link']] : []).forEach(([,cls,txt])=>{
+    const li = document.createElement('li'); li.innerHTML = `<span class="sw ${cls}"></span>`; li.append(txt); ul.appendChild(li);
+  });
+
+  /* ---------- tương tác ---------- */
+  const infoBox = document.getElementById('info'), infoTitle = document.getElementById('info-title'), infoText = document.getElementById('info-text');
+  function focusLane(lane){
+    svg.querySelectorAll('[data-lane]').forEach(e=>{
+      const l = e.getAttribute('data-lane');
+      const on = lane && (lane==='all' || l===lane || l==='all');
+      e.classList.toggle('dim', !!lane && !on);
+      e.classList.toggle('live', !!on);
+    });
+  }
+  function show(key){
+    const n = nodes[key];
+    focusLane(n.lane);
+    const acc = n.lane==='all' ? COLOR.report : n.variant==='manual' ? COLOR.manual : laneColor(n.lane);
+    infoBox.style.setProperty('--accent', acc);
+    infoTitle.textContent = n.info[0];
+    infoText.textContent = n.info[1];
+    infoText.classList.remove('hint');
+  }
+  function reset(){
+    focusLane(null);
+    infoBox.style.removeProperty('--accent');
+    infoTitle.textContent = 'Chi tiết';
+    infoText.textContent = 'Di chuột hoặc chạm vào một khối trên sơ đồ.';
+    infoText.classList.add('hint');
+  }
+  const openLink = k => { const u = nodes[k].url; if (u) window.open(u, '_blank', 'noopener'); };
+  svg.querySelectorAll('.node').forEach(g=>{
+    const k = g.getAttribute('data-key');
+    g.addEventListener('mouseenter', ()=>show(k));
+    g.addEventListener('focus', ()=>show(k));
+    g.addEventListener('click', ()=>{ show(k); openLink(k); });
+    g.addEventListener('keydown', ev=>{ if (ev.key==='Enter') openLink(k); });
+    if (nodes[k].url){ g.setAttribute('role','link'); g.classList.add('linked'); }
+  });
+  svg.addEventListener('mouseleave', reset);
+
+  window.__DIAGRAM = {CONFIG:C, LABEL_W};   // dùng cho scripts/check_diagram.py
+})();
+</script>
+</body>
+</html>
